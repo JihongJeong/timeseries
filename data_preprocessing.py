@@ -6,7 +6,6 @@ from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
 
 def load_data():
-    # 데이터 로드 (df는 주식 데이터)
     df = yf.download("BTC-USD")
     close = np.squeeze(np.array(df["Close"]))
     high = np.squeeze(np.array(df["High"]))
@@ -25,14 +24,18 @@ def load_data():
 def plot_data(df, with_prediction = False):
     if with_prediction:
         plt.figure(figsize = (12, 8))
+        plt.title("Close Prise vs Predicted Price")
         plt.plot(df["Close"], color = "blue", label = "Close price")    
-        plt.plot(df["Pred"], color = "red", label = "predicted")
+        plt.plot(df["Predict"], color = "red", label = "predicted")
         plt.legend()
         plt.xlabel("Date")
         plt.ylabel("Price")
+        plt.show()
+        
     else:
         plt.figure(figsize = (18, 12))
         plt.subplot(3, 1, 1)
+        plt.title("Close Prise & Technical Indicators")
         plt.plot(df["Close"], color = "blue", label = "Close price")    
         plt.plot(df["SimpleMovingAverage"], color = "red", label = "SMA")
         plt.plot(df["UpperBand"], color = "black", label = "Bollinger Band")
@@ -55,18 +58,19 @@ def plot_data(df, with_prediction = False):
         plt.show()
 
 def scale(df):
-    # 데이터 정규화
     scaler = MinMaxScaler()
-    df_scaled = scaler.fit_transform(df)
-
+    scaler_ti = MinMaxScaler()
+    df = np.array(df)
+    df_scaled_close = scaler.fit_transform(df[:, 0].reshape(-1, 1))
+    df_scaled_ti = scaler_ti.fit_transform(df[:, 1:].reshape(-1, 6))
+    df_scaled = np.concatenate((df_scaled_close, df_scaled_ti), axis = 1)
     return df_scaled, scaler
 
 def inverse_scale(df_scaled, scaler : MinMaxScaler):
-    df = scaler.invers_transform(df_scaled)
+    df = scaler.inverse_transform(df_scaled)
     
     return df
 
-# LSTM 모델을 위한 데이터셋 생성
 def create_sequences(X, y, seq_length=30):
     sequences = []
     targets = []
@@ -86,5 +90,10 @@ def train_test_split(df):
     
     return X_train, y_train, X_test, y_test
 
-
-
+def add_result(df, result):
+    len_result = len(result)
+    df_pd = pd.DataFrame(df)
+    pred = [None for _ in range(df.shape[0] - len_result)] + result
+    df_pd["Predict"] = pred
+    
+    return df_pd
