@@ -7,7 +7,7 @@ import os
 import pandas as pd
 import itertools
 import matplotlib.pyplot as plt
-from data_preprocessing import load_data, plot_data, scale, inverse_scale, train_test_split, create_sequences, add_result
+from data_preprocessing import load_data, plot_data, scale, inverse_scale
 from statsmodels.tsa.stattools import adfuller
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.arima.model import ARIMA
