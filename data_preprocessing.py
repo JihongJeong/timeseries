@@ -5,8 +5,8 @@ import talib
 from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
 
-def load_data():
-    df = yf.download("BTC-USD")
+def load_data(all: bool = True):
+    df = yf.download("BTC-USD") if all else yf.download("BTC-USD", period = '3mo')
     close = np.squeeze(np.array(df["Close"]))
     high = np.squeeze(np.array(df["High"]))
     low = np.squeeze(np.array(df["Low"]))
@@ -17,6 +17,7 @@ def load_data():
     df["UpperBand"], df["MidBand"], df["LowerBand"] = talib.BBANDS(close, timeperiod=20)
     df["MACD"], macd_signal, macd_hist = talib.MACD(close, fastperiod=12, slowperiod=26, signalperiod=9)
 
+    df = df.dropna()
     features = ["Close", "SimpleMovingAverage", "StochasticSlowK", "RSI", "UpperBand", "LowerBand", "MACD"]
     
     return df[features], features
@@ -80,10 +81,9 @@ def create_sequences(X, y, seq_length=30):
     return np.array(sequences), np.array(targets)
 
 def train_test_split(df):
-    strat_point = int(len(df)*0.1)
-    len_train = int(len(df)*0.9)
-    X_train = df[strat_point:len_train]
-    y_train = df[strat_point:len_train, 0]
+    len_train = int(len(df)*0.8)
+    X_train = df[:len_train]
+    y_train = df[:len_train, 0]
 
     X_test = df[len_train:]
     y_test = df[len_train:, 0]
