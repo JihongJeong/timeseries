@@ -1,25 +1,38 @@
 import yfinance as yf
 import pandas as pd
 import numpy as np
-import talib
+import ta
+from ta.momentum import RSIIndicator, StochasticOscillator
+from ta.trend import MACD, SMAIndicator
+from ta.volatility import BollingerBands
 from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
 
 def load_data(all: bool = True):
     df = yf.download("BTC-USD") if all else yf.download("BTC-USD", period = '3mo')
-    close = np.squeeze(np.array(df["Close"]))
-    high = np.squeeze(np.array(df["High"]))
-    low = np.squeeze(np.array(df["Low"]))
+    close = df["Close"].squeeze()
+    high = df["High"].squeeze()
+    low = df["Low"].squeeze()
 
-    df["SimpleMovingAverage"] = talib.SMA(close, timeperiod = 20)
-    df["StochasticSlowK"], df["StochasticSlowD"] = talib.STOCH(high, low, close, fastk_period=14, slowk_period=3, slowk_matype=0, slowd_period=3, slowd_matype=0)
-    df["RSI"] = talib.RSI(close, timeperiod = 14)
-    df["UpperBand"], df["MidBand"], df["LowerBand"] = talib.BBANDS(close, timeperiod=20)
-    df["MACD"], macd_signal, macd_hist = talib.MACD(close, fastperiod=12, slowperiod=26, signalperiod=9)
+    sma = SMAIndicator(close, window = 20)
+    df["SimpleMovingAverage"] = sma.sma_indicator().squeeze()
+    
+    stoch = StochasticOscillator(close, high, low, window=14, smooth_window = 3)
+    df["StochasticSlowK"] = stoch.stoch().squeeze()
+    
+    rsi = RSIIndicator(close, window = 14)
+    df["RSI"] = rsi.rsi().squeeze()
+    
+    bollinger = BollingerBands(close, window = 20)
+    df["UpperBand"] = bollinger.bollinger_hband().values.ravel()
+    df["LowerBand"] = bollinger.bollinger_lband().values.ravel()
+    
+    macd = MACD(close, window_fast=12, window_slow=26, window_sign=9)
+    df["MACD"] = macd.macd().squeeze()
 
     df = df.dropna()
     features = ["Close", "SimpleMovingAverage", "StochasticSlowK", "RSI", "UpperBand", "LowerBand", "MACD"]
-    
+
     return df[features], features
 
 def plot_data(df, with_prediction = False):

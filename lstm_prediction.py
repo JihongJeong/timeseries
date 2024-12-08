@@ -73,7 +73,6 @@ if info.mode == 'train/test':
     result = []
     for idx, batch in enumerate(test_loader):
         x, y = batch
-        print(x, x.shape)
         pred = lstm(x).squeeze()
         result += pred.detach().tolist()
         test_loss += loss_function(pred, y)
