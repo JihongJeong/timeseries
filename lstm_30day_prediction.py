@@ -103,10 +103,19 @@ if __name__ == "__main__":
     start_time = datetime.strptime("2024-11-21", "%Y-%m-%d")
     end_time = datetime.strptime("2024-12-16", "%Y-%m-%d")
     df = yf.download("BTC-USD", start = start_time, end = end_time, interval="1d")
+    df_ex = yf.download("KRW=X", start = start_time, end = end_time, interval="1d")
     
     df_with_pred = df['Close']
     df_with_pred.columns = ['Close']
     df_with_pred['Pred'] = future_prices.reshape(-1, 1)
+    df_with_pred['Exchange'] = df_ex['Close']
+    df_with_pred = df_with_pred.ffill()
+    df_with_pred['Close_won'] = df_with_pred['Close'] * df_with_pred['Exchange']
+    df_with_pred['Pred_won'] = df_with_pred['Pred'] * df_with_pred['Exchange']
     
+    print(df_with_pred)
     print(f"MAE : {mean_absolute_error(df_with_pred['Close'], df_with_pred['Pred'])}")
-    print(f"RMSE : {np.sqrt(mean_squared_error(df_with_pred['Close'], df_with_pred['Pred']))}")
+    print(f"MSE : {mean_squared_error(df_with_pred['Close'], df_with_pred['Pred'])}")
+    
+    print(f"MAE(Won) : {mean_absolute_error(df_with_pred['Close'], df_with_pred['Pred'])}")
+    print(f"MSE(Won) : {mean_squared_error(df_with_pred['Close_won'], df_with_pred['Pred_won'])}")
